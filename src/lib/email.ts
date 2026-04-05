@@ -128,3 +128,30 @@ export async function sendCustomerConfirmationEmail(payload: EmailOrderPayload) 
     `,
   });
 }
+
+export async function sendCustomerPickupReadyEmail(payload: EmailOrderPayload, pickupTime: string) {
+  const from = process.env.MAIL_FROM;
+
+  if (!payload.customerGmail || !from) {
+    throw new Error("缺少客戶 Gmail 或 MAIL_FROM 未設定");
+  }
+
+  const transporter = getTransporter();
+
+  await transporter.sendMail({
+    from,
+    to: payload.customerGmail,
+    subject: `【可領件通知】${payload.orderNumber}｜PawFect Beads-韓式串珠`,
+    html: `
+      <h2>您的訂單已製作完成</h2>
+      <p>訂單編號：<strong>${payload.orderNumber}</strong></p>
+      <p>請在（${pickupTime}）的時候於新竹女中正門口面交。</p>
+      <hr />
+      <h3>訂單清單</h3>
+      ${buildItemsHtml(payload.items)}
+      <p><strong>總金額：${formatCurrency(payload.totalAmount)}</strong></p>
+      <hr />
+      <p>品牌：PawFect Beads-韓式串珠</p>
+    `,
+  });
+}

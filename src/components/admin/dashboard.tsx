@@ -79,12 +79,25 @@ export function AdminDashboard() {
 
   const handleShipOrder = useCallback(
     async (orderId: string) => {
+      const pickupTimeInput = window.prompt("請輸入領件時間（例如：4/8 17:30）");
+      if (pickupTimeInput === null) {
+        return;
+      }
+
+      const pickupTime = pickupTimeInput.trim();
+      if (!pickupTime) {
+        setError("請先輸入領件時間");
+        return;
+      }
+
       setPendingKey(`ship-${orderId}`);
       setError(null);
 
       try {
         const response = await fetch(`/api/admin/orders/${orderId}/complete`, {
           method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ pickupTime }),
         });
 
         if (response.status === 401) {
@@ -95,6 +108,11 @@ export function AdminDashboard() {
         if (!response.ok) {
           setError("出貨失敗");
           return;
+        }
+
+        const payload = (await response.json().catch(() => null)) as { warning?: string } | null;
+        if (payload?.warning) {
+          setError(payload.warning);
         }
 
         await loadData();
