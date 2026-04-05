@@ -1,65 +1,121 @@
-import Image from "next/image";
+﻿import Image from "next/image";
+import Link from "next/link";
 
-export default function Home() {
+import { formatCurrency } from "@/src/lib/cart";
+import { PRODUCT_CATALOG } from "@/src/lib/catalog";
+import { getActiveCatalogProducts } from "@/src/lib/catalog-db";
+import { getActiveInstagramEmbeds } from "@/src/lib/instagram-embed";
+
+export default async function HomePage() {
+  const [products, instagramEmbeds] = await Promise.all([
+    getActiveCatalogProducts().catch(() => []),
+    getActiveInstagramEmbeds().catch(() => []),
+  ]);
+  const displayProducts = products.length > 0 ? products : PRODUCT_CATALOG;
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+    <main className="mx-auto flex w-full max-w-[76rem] flex-1 flex-col gap-16 px-5 pb-24 pt-12 sm:px-8 sm:pt-16 lg:gap-24 lg:px-12">
+      <section className="relative overflow-hidden rounded-[2.25rem] border border-rose-100/90 bg-gradient-to-br from-[#fffdf9] via-[#fff8fb] to-[#fffefe] px-6 py-12 shadow-[0_22px_48px_-34px_rgba(127,84,98,0.42)] sm:px-10 sm:py-14 lg:px-14 lg:py-16">
+        <div className="absolute -right-12 -top-10 h-56 w-56 rounded-full bg-rose-100/50 blur-3xl" />
+        <div className="absolute -bottom-14 left-5 h-40 w-40 rounded-full bg-amber-100/45 blur-3xl" />
+
+        <div className="relative z-10 mx-auto grid w-full max-w-5xl gap-10 lg:grid-cols-[1.3fr_0.7fr] lg:items-end">
+          <div className="max-w-3xl">
+            <Image src="/logo.svg" alt="PawFect Beads-韓式串珠" width={244} height={86} priority />
+            <h1 className="mt-7 text-4xl font-semibold tracking-tight text-[#412f34] sm:text-5xl sm:leading-tight">
+              {"PawFect Beads-韓式串珠"}
+            </h1>
+            <p className="mt-6 max-w-2xl text-base leading-[1.7] text-stone-600 sm:text-lg">
+              {"以溫柔韓系配色與細膩手工，為你打造專屬日常的串珠飾品。每件作品皆可客製尺寸、配色與款式細節。"}
+            </p>
+            <div className="mt-9 flex flex-wrap gap-4">
+              <Link
+                href="/order"
+                className="rounded-2xl bg-rose-600 px-6 py-3.5 text-sm font-semibold text-white shadow-[0_14px_24px_-16px_rgba(190,24,93,0.75)] transition hover:bg-rose-700"
+              >
+                {"開始下單"}
+              </Link>
+            </div>
+          </div>
+
+          <aside className="rounded-3xl border border-rose-100/85 bg-white/85 p-6 shadow-[0_16px_32px_-26px_rgba(99,63,77,0.5)] backdrop-blur-sm">
+            <p className="text-sm font-medium tracking-[0.02em] text-rose-900/80">{"客製服務"}</p>
+            <p className="mt-3 text-sm leading-[1.65] text-stone-600">
+              {"從手圍尺寸、配色到吊飾細節都能調整，讓每件成品都貼近你的日常風格。"}
+            </p>
+          </aside>
+        </div>
+      </section>
+
+      <section id="pricing" className="mx-auto w-full max-w-5xl scroll-mt-24">
+        <h2 className="text-3xl font-semibold tracking-tight text-[#412f34] sm:text-[2rem]">{"品項"}</h2>
+        <p className="mt-4 max-w-2xl text-base leading-[1.7] text-stone-600">
+          {"以下為目前提供的固定品項，價格清楚透明，可直接加入訂單。"}
+        </p>
+        <div className="mt-8 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+          {displayProducts.map((item) => (
+            <article
+              key={item.id}
+              className="rounded-3xl border border-rose-100/85 bg-white px-6 py-6 shadow-[0_16px_30px_-26px_rgba(111,75,89,0.52)]"
             >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+              <p className="text-[15px] leading-[1.65] text-stone-600">{item.name}</p>
+              <p className="mt-5 text-2xl font-semibold tracking-tight text-rose-900">{formatCurrency(item.price)}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section id="instagram-feed" className="mx-auto w-full max-w-5xl scroll-mt-24">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <h2 className="text-3xl font-semibold tracking-tight text-[#412f34] sm:text-[2rem]">{"貼文"}</h2>
+          <Link
+            href="https://www.instagram.com"
+            target="_blank"
+            rel="noreferrer"
+            className="text-sm font-medium text-rose-700 transition hover:text-rose-800"
+          >
+            {"前往 Instagram 看更多"}
+          </Link>
+        </div>
+        <p className="mt-4 max-w-2xl text-base leading-[1.7] text-stone-600">
+          {"以下內容由後台新增的 IG 內嵌貼文自動顯示。"}
+        </p>
+
+        {instagramEmbeds.length > 0 ? (
+          <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {instagramEmbeds.map((post) => (
+              <article
+                key={post.id}
+                className="overflow-hidden rounded-3xl border border-rose-100/85 bg-white p-3 shadow-[0_16px_30px_-26px_rgba(111,75,89,0.52)]"
+              >
+                <div className="overflow-hidden rounded-2xl border border-rose-100">
+                  <iframe
+                    src={post.embedUrl}
+                    title={post.title || "Instagram 內嵌貼文"}
+                    loading="lazy"
+                    className="h-[520px] w-full"
+                    allowTransparency={true}
+                  />
+                </div>
+                <div className="px-2 pb-1 pt-3">
+                  <a
+                    href={post.permalink}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-sm text-rose-700 underline decoration-rose-200 underline-offset-4"
+                  >
+                    {post.title || "前往 Instagram 原貼文"}
+                  </a>
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <p className="mt-8 rounded-2xl border border-dashed border-rose-200 bg-rose-50/70 px-5 py-4 text-sm leading-[1.7] text-stone-600">
+            {"目前尚未新增 IG 內嵌貼文。"}
           </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+        )}
+      </section>
+    </main>
   );
 }
