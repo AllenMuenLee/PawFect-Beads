@@ -1,0 +1,1 @@
+ALTER TABLE "OrderItem" ADD COLUMN "isCompleted" BOOLEAN NOT NULL DEFAULT false;

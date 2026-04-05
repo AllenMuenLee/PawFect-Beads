@@ -1,0 +1,1 @@
+ALTER TABLE "OrderItem" ADD COLUMN "addOnCharmQuantity" INTEGER NOT NULL DEFAULT 0;

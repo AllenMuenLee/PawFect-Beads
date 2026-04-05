@@ -1,0 +1,88 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Order {
+  id                String      @id @default(cuid())
+  orderNumber       String      @unique
+  status            String
+  createdAt         DateTime    @default(now())
+  customerGmail     String?
+  customerInstagram String?
+  customerLine      String?
+  note              String?
+  totalAmount       Int
+  items             OrderItem[]
+  emailLogs         EmailLog[]
+}
+
+model OrderItem {
+  id                String   @id @default(cuid())
+  orderId           String
+  order             Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId         String
+  productName       String
+  unitPrice         Int
+  quantity          Int
+  categoryType      String
+  sizeValue         String
+  colorScheme       String
+  styleDescription  String
+  addOnCharm        Boolean  @default(false)
+  addOnCharmQuantity Int     @default(0)
+  addOnCharmPrice   Int      @default(0)
+  isCompleted       Boolean  @default(false)
+  referenceImageUrl String?
+  createdAt         DateTime @default(now())
+
+  @@index([orderId])
+}
+
+model EmailLog {
+  id           String   @id @default(cuid())
+  orderId      String
+  order        Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  recipient    String
+  emailType    String
+  status       String
+  errorMessage String?
+  createdAt    DateTime @default(now())
+
+  @@index([orderId])
+}
+
+model ProductCatalog {
+  id           String   @id
+  name         String
+  price        Int
+  categoryType String
+  allowCharm   Boolean  @default(false)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model AdminProduct {
+  id          String   @id @default(cuid())
+  name        String
+  price       Int
+  stock       Int
+  description String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model InstagramEmbed {
+  id        String   @id @default(cuid())
+  title     String?
+  permalink String   @unique
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
