@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { NextResponse } from "next/server";
 
 import { getAdminSessionCookieConfig, verifyAdminSessionToken } from "@/src/lib/admin-auth";
+import { ensureDatabaseInitialized } from "@/src/lib/db-init";
 
 export async function hasAdminSession() {
   const cookieStore = await cookies();
@@ -16,6 +17,15 @@ export async function guardAdminApi() {
 
   if (!authenticated) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    await ensureDatabaseInitialized();
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? `資料庫初始化失敗：${error.message}` : "資料庫初始化失敗" },
+      { status: 500 },
+    );
   }
 
   return null;

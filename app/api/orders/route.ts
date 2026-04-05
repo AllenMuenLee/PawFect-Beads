@@ -4,6 +4,7 @@ import { ADD_ON_CHARM_PRICE, calculateOrderTotal } from "@/src/lib/cart";
 import { BRACELET_SIZES, NECKLACE_SIZES } from "@/src/lib/catalog";
 import { getCatalogProductMapByIds } from "@/src/lib/catalog-db";
 import { ORDER_STATUS } from "@/src/lib/order-status";
+import { ensureDatabaseInitialized } from "@/src/lib/db-init";
 import {
   sendCustomerConfirmationEmail,
   sendOwnerOrderEmail,
@@ -18,6 +19,8 @@ export const runtime = "nodejs";
 
 export async function POST(request: Request) {
   try {
+    await ensureDatabaseInitialized();
+
     const rawPayload = (await request.json()) as unknown;
     const parsed = createOrderPayloadSchema.safeParse(rawPayload);
 

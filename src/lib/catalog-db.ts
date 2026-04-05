@@ -1,7 +1,10 @@
-﻿import { prisma } from "@/src/lib/prisma";
-import type { ProductCatalogItem } from "@/src/lib/catalog";
+﻿import type { ProductCatalogItem } from "@/src/lib/catalog";
+import { ensureDatabaseInitialized } from "@/src/lib/db-init";
+import { prisma } from "@/src/lib/prisma";
 
 export async function getActiveCatalogProducts(): Promise<ProductCatalogItem[]> {
+  await ensureDatabaseInitialized();
+
   const products = await prisma.productCatalog.findMany({
     where: { isActive: true },
     orderBy: { createdAt: "asc" },
@@ -19,6 +22,8 @@ export async function getActiveCatalogProducts(): Promise<ProductCatalogItem[]> 
 }
 
 export async function getCatalogProductMapByIds(productIds: string[]) {
+  await ensureDatabaseInitialized();
+
   const products = await prisma.productCatalog.findMany({
     where: {
       id: { in: productIds },
