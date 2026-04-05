@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import { cartItemSchema, checkoutSchema } from "@/src/lib/validation";
 
@@ -9,8 +9,8 @@ describe("cartItemSchema", () => {
       productId: "bracelet-basic",
       quantity: 1,
       sizeValue: "15",
-      colorScheme: "\u7c89\u8272\u7cfb",
-      styleDescription: "\u6e2c\u8a66\u6b3e\u5f0f\u63cf\u8ff0",
+      colorScheme: "粉色系",
+      styleDescription: "測試款式描述",
       addOnCharmQuantity: 2,
       referenceImageUrl: "",
     });

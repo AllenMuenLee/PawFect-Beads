@@ -1,4 +1,4 @@
-﻿import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
 import { uploadReferenceImage } from "@/src/lib/upload";
 
@@ -10,11 +10,11 @@ export async function POST(request: Request) {
     const file = formData.get("file");
 
     if (!(file instanceof File)) {
-      return NextResponse.json({ error: "\u8acb\u9078\u64c7\u8981\u4e0a\u50b3\u7684\u5716\u7247" }, { status: 400 });
+      return NextResponse.json({ error: "請選擇要上傳的圖片" }, { status: 400 });
     }
 
     if (!file.type.startsWith("image/")) {
-      return NextResponse.json({ error: "\u50c5\u652f\u63f4\u5716\u7247\u6a94\u6848" }, { status: 400 });
+      return NextResponse.json({ error: "僅支援圖片檔案" }, { status: 400 });
     }
 
     const url = await uploadReferenceImage(file);
@@ -23,7 +23,7 @@ export async function POST(request: Request) {
   } catch (error) {
     return NextResponse.json(
       {
-        error: error instanceof Error ? error.message : "\u5716\u7247\u4e0a\u50b3\u5931\u6557",
+        error: error instanceof Error ? error.message : "圖片上傳失敗",
       },
       { status: 500 },
     );
