@@ -105,6 +105,15 @@ async function createPostgresTables() {
       "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
     );
   `);
+
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "UploadedImage" (
+      "id" TEXT PRIMARY KEY,
+      "mimeType" TEXT NOT NULL,
+      "dataBase64" TEXT NOT NULL,
+      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
 }
 
 async function seedDefaultCatalogProducts() {

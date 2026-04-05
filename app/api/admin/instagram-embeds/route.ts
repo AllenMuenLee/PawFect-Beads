@@ -59,6 +59,23 @@ export async function POST(request: Request) {
   }
 
   try {
+    const existing = await prisma.instagramEmbed.findUnique({
+      where: { permalink },
+    });
+
+    if (existing) {
+      return NextResponse.json(
+        {
+          embed: {
+            ...existing,
+            embedUrl: toInstagramEmbedUrl(existing.permalink),
+          },
+          duplicated: true,
+        },
+        { status: 200 },
+      );
+    }
+
     const embed = await prisma.instagramEmbed.create({
       data: {
         title: parsed.data.title || null,

@@ -32,6 +32,21 @@ describe("cartItemSchema", () => {
 
     expect(result.success).toBe(true);
   });
+
+  it("should pass when reference image uses api upload path", () => {
+    const result = cartItemSchema.safeParse({
+      id: "item-3",
+      productId: "bracelet-basic",
+      quantity: 1,
+      sizeValue: "15",
+      colorScheme: "粉色系",
+      styleDescription: "",
+      addOnCharmQuantity: 0,
+      referenceImageUrl: "/api/upload/demo-id.jpg",
+    });
+
+    expect(result.success).toBe(true);
+  });
 });
 
 describe("checkoutSchema", () => {

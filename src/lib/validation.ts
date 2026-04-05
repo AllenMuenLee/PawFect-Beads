@@ -3,7 +3,7 @@
 import { COLOR_SCHEMES } from "@/src/lib/catalog";
 
 function isValidReferenceImageUrl(value: string) {
-  if (value.startsWith("/uploads/")) {
+  if (value.startsWith("/uploads/") || value.startsWith("/api/upload/")) {
     return true;
   }
 
@@ -18,17 +18,17 @@ function isValidReferenceImageUrl(value: string) {
 export const cartItemSchema = z
   .object({
     id: z.string().optional(),
-    productId: z.string().min(1, "?????"),
-    quantity: z.number().int("??????").min(1, "???? 1").max(99, "???? 99"),
-    sizeValue: z.string().min(1, "????????"),
+    productId: z.string().min(1, "請選擇商品"),
+    quantity: z.number().int("數量需為整數").min(1, "數量至少 1").max(99, "數量最多 99"),
+    sizeValue: z.string().min(1, "請選擇尺寸或長度"),
     colorScheme: z
       .string()
-      .refine((value) => COLOR_SCHEMES.includes(value as (typeof COLOR_SCHEMES)[number]), "?????"),
-    styleDescription: z.string().max(600, "?????? 600 ?"),
-    addOnCharmQuantity: z.number().int("????????").min(0, "???????? 0"),
+      .refine((value) => COLOR_SCHEMES.includes(value as (typeof COLOR_SCHEMES)[number]), "請選擇配色"),
+    styleDescription: z.string().max(600, "款式描述最多 600 字"),
+    addOnCharmQuantity: z.number().int("加購數量需為整數").min(0, "加購數量不可小於 0"),
     referenceImageUrl: z
       .string()
-      .refine((value) => value === "" || isValidReferenceImageUrl(value), "??????????")
+      .refine((value) => value === "" || isValidReferenceImageUrl(value), "參考圖片格式不正確")
       .optional()
       .or(z.literal("")),
   })
@@ -36,7 +36,7 @@ export const cartItemSchema = z
     if (value.addOnCharmQuantity > value.quantity) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "???????????????",
+        message: "加購小綴飾數量不可超過商品數量",
         path: ["addOnCharmQuantity"],
       });
     }
@@ -46,12 +46,12 @@ export const checkoutSchema = z
   .object({
     customerGmail: z
       .string()
-      .refine((value) => value === "" || /^[^@\s]+@gmail\.com$/i.test(value), "????? Gmail")
+      .refine((value) => value === "" || /^[^@\s]+@gmail\.com$/i.test(value), "請填寫 Gmail")
       .or(z.literal("")),
-    customerInstagram: z.string().max(100, "Instagram ?? 100 ?").or(z.literal("")),
-    customerLine: z.string().max(100, "LINE ?? 100 ?").or(z.literal("")),
-    note: z.string().max(1000, "???? 1000 ?").or(z.literal("")),
-    termsAccepted: z.boolean().refine((value) => value, "???????????"),
+    customerInstagram: z.string().max(100, "Instagram 最多 100 字").or(z.literal("")),
+    customerLine: z.string().max(100, "LINE 最多 100 字").or(z.literal("")),
+    note: z.string().max(1000, "備註最多 1000 字").or(z.literal("")),
+    termsAccepted: z.boolean().refine((value) => value, "請勾選同意注意事項"),
     materialAdjustment: z.enum(["accept", "confirm-first"]),
   })
   .superRefine((value, ctx) => {
@@ -61,7 +61,7 @@ export const checkoutSchema = z
       value.customerLine.trim().length > 0;
 
     if (!hasAnyContact) {
-      const message = "????? Gmail?Instagram ? LINE ????????";
+      const message = "請至少填寫 Gmail、Instagram 或 LINE 其中一項聯絡方式";
       ctx.addIssue({ code: z.ZodIssueCode.custom, message, path: ["customerGmail"] });
       ctx.addIssue({ code: z.ZodIssueCode.custom, message, path: ["customerInstagram"] });
       ctx.addIssue({ code: z.ZodIssueCode.custom, message, path: ["customerLine"] });
@@ -69,11 +69,10 @@ export const checkoutSchema = z
   });
 
 export const createOrderPayloadSchema = z.object({
-  items: z.array(cartItemSchema).min(1, "???????"),
+  items: z.array(cartItemSchema).min(1, "購物車至少要有一項"),
   checkout: checkoutSchema,
 });
 
 export type CartItemInput = z.infer<typeof cartItemSchema>;
 export type CheckoutInput = z.infer<typeof checkoutSchema>;
 export type CreateOrderPayloadInput = z.infer<typeof createOrderPayloadSchema>;
-
