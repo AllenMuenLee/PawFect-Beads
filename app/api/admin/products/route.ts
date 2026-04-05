@@ -1,5 +1,6 @@
 ﻿import { randomUUID } from "node:crypto";
 
+import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -22,11 +23,19 @@ export async function GET() {
     return guardResponse;
   }
 
-  const products = await prisma.productCatalog.findMany({
-    orderBy: { createdAt: "asc" },
-  });
+  try {
+    const products = await prisma.productCatalog.findMany({
+      orderBy: { createdAt: "asc" },
+    });
 
-  return NextResponse.json({ products });
+    return NextResponse.json({ products });
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2021") {
+      return NextResponse.json({ products: [] });
+    }
+
+    return NextResponse.json({ error: "讀取商品失敗" }, { status: 500 });
+  }
 }
 
 export async function POST(request: Request) {

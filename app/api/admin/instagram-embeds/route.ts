@@ -1,5 +1,5 @@
+﻿import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
-import { Prisma } from "@prisma/client";
 import { z } from "zod";
 
 import { guardAdminApi } from "@/src/lib/admin-guard";
@@ -20,16 +20,24 @@ export async function GET() {
     return guardResponse;
   }
 
-  const embeds = await prisma.instagramEmbed.findMany({
-    orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
-  });
+  try {
+    const embeds = await prisma.instagramEmbed.findMany({
+      orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
+    });
 
-  return NextResponse.json({
-    embeds: embeds.map((item) => ({
-      ...item,
-      embedUrl: toInstagramEmbedUrl(item.permalink),
-    })),
-  });
+    return NextResponse.json({
+      embeds: embeds.map((item) => ({
+        ...item,
+        embedUrl: toInstagramEmbedUrl(item.permalink),
+      })),
+    });
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2021") {
+      return NextResponse.json({ embeds: [] });
+    }
+
+    return NextResponse.json({ error: "讀取 IG 貼文失敗" }, { status: 500 });
+  }
 }
 
 export async function POST(request: Request) {
@@ -74,7 +82,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "這篇貼文已經新增過了" }, { status: 409 });
     }
 
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2021") {
+      return NextResponse.json({ error: "IG 貼文資料表尚未建立" }, { status: 500 });
+    }
+
     return NextResponse.json({ error: "新增貼文失敗" }, { status: 500 });
   }
 }
-
