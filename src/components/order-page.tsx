@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import Image from "next/image";
@@ -10,7 +10,6 @@ import { ADD_ON_CHARM_PRICE, calculateCartItemSubtotal, formatCurrency } from "@
 import {
   BRACELET_SIZES,
   COLOR_SCHEMES,
-  NECKLACE_SIZES,
   type ProductCatalogItem,
   PRODUCT_CATALOG,
 } from "@/src/lib/catalog";
@@ -41,6 +40,8 @@ const defaultCheckoutValues: CheckoutInput = {
   termsAccepted: false,
   materialAdjustment: "accept",
 };
+
+const NECKLACE_SIZE_VALUE = "固定尺寸";
 
 export function OrderPage() {
   const { items, totalAmount, addItem, updateItem, removeItem, updateQuantity, clearCart, isReady } =
@@ -112,7 +113,7 @@ export function OrderPage() {
     }
 
     if (product.categoryType === "necklace") {
-      itemForm.setValue("sizeValue", NECKLACE_SIZES[0]);
+      itemForm.setValue("sizeValue", NECKLACE_SIZE_VALUE);
       return;
     }
 
@@ -158,9 +159,13 @@ export function OrderPage() {
   };
 
   const onAddOrUpdateItem = (values: CartItemInput) => {
+    const normalizedSizeValue =
+      selectedProduct?.categoryType === "necklace" ? NECKLACE_SIZE_VALUE : values.sizeValue;
+
     const payload: CartItemInput = {
       ...values,
       id: values.id?.trim() || crypto.randomUUID(),
+      sizeValue: normalizedSizeValue,
       referenceImageUrl: values.referenceImageUrl || "",
     };
 
@@ -299,7 +304,8 @@ export function OrderPage() {
               <select
                 className="w-full rounded-2xl border border-rose-200 bg-rose-50/40 px-4 py-3 text-sm"
                 value={selectedProductId}
-                onChange={(event) => onProductChange(event.target.value)} disabled={isCatalogLoading || catalogProducts.length === 0}
+                onChange={(event) => onProductChange(event.target.value)}
+                disabled={isCatalogLoading || catalogProducts.length === 0}
               >
                 {catalogProducts.map((item) => (
                   <option key={item.id} value={item.id}>
@@ -320,10 +326,7 @@ export function OrderPage() {
                   className="w-full rounded-2xl border border-rose-200 bg-rose-50/40 px-4 py-3 text-sm"
                   value={itemForm.watch("quantity")}
                   onChange={(event) => {
-                    const nextQuantity = Math.min(
-                      99,
-                      Math.max(1, Number(event.target.value) || 1),
-                    );
+                    const nextQuantity = Math.min(99, Math.max(1, Number(event.target.value) || 1));
                     itemForm.setValue("quantity", nextQuantity, { shouldValidate: true });
                     const charmQty = itemForm.getValues("addOnCharmQuantity");
                     if (charmQty > nextQuantity) {
@@ -348,24 +351,21 @@ export function OrderPage() {
                     ))}
                   </select>
                 )}
-                {selectedProduct?.categoryType === "necklace" && (
-                  <select
-                    className="w-full rounded-2xl border border-rose-200 bg-rose-50/40 px-4 py-3 text-sm"
-                    {...itemForm.register("sizeValue")}
-                  >
-                    {NECKLACE_SIZES.map((size) => (
-                      <option key={size} value={size}>
-                        {size}
-                      </option>
-                    ))}
-                  </select>
-                )}
                 {selectedProduct?.categoryType === "ring" && (
                   <input
                     type="text"
                     placeholder="請輸入戒圍，例如：#8"
                     className="w-full rounded-2xl border border-rose-200 bg-rose-50/40 px-4 py-3 text-sm"
                     {...itemForm.register("sizeValue")}
+                  />
+                )}
+                {selectedProduct?.categoryType === "necklace" && (
+                  <input
+                    type="text"
+                    value="固定尺寸"
+                    disabled
+                    readOnly
+                    className="w-full cursor-not-allowed rounded-2xl border border-stone-200 bg-stone-100 px-4 py-3 text-sm text-stone-500"
                   />
                 )}
                 <p className="text-xs text-rose-500">{itemForm.formState.errors.sizeValue?.message}</p>
@@ -494,7 +494,9 @@ export function OrderPage() {
               {items.map((item) => (
                 <div key={item.id} className="rounded-2xl border border-rose-100 bg-rose-50/40 p-3">
                   <p className="text-sm font-medium text-stone-800">{item.productName}</p>
-                  <p className="mt-1 text-xs text-stone-600">尺寸：{item.sizeValue}</p>
+                  {item.categoryType !== "necklace" ? (
+                    <p className="mt-1 text-xs text-stone-600">尺寸：{item.sizeValue}</p>
+                  ) : null}
                   <p className="text-xs text-stone-600">配色：{item.colorScheme}</p>
                   {item.addOnCharmQuantity > 0 && (
                     <p className="text-xs text-stone-600">
@@ -572,11 +574,12 @@ export function OrderPage() {
 
             <form onSubmit={checkoutForm.handleSubmit(onSubmitOrder)} className="space-y-3">
               <div className="space-y-1">
-                <label className="text-sm font-medium text-stone-800">Gmail</label>
+                <label className="text-sm font-medium text-stone-800">Gmail（必填）</label>
                 <input
                   type="email"
                   placeholder="example@gmail.com"
                   className="w-full rounded-2xl border border-rose-200 bg-rose-50/40 px-4 py-3 text-sm"
+                  required
                   {...checkoutForm.register("customerGmail")}
                 />
                 <p className="text-xs text-rose-500">{checkoutForm.formState.errors.customerGmail?.message}</p>
@@ -656,5 +659,3 @@ export function OrderPage() {
     </section>
   );
 }
-
-

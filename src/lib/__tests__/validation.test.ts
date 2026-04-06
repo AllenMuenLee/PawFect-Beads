@@ -50,7 +50,7 @@ describe("cartItemSchema", () => {
 });
 
 describe("checkoutSchema", () => {
-  it("should fail when all contact methods are empty", () => {
+  it("should fail when gmail is empty", () => {
     const result = checkoutSchema.safeParse({
       customerGmail: "",
       customerInstagram: "",
@@ -63,10 +63,10 @@ describe("checkoutSchema", () => {
     expect(result.success).toBe(false);
   });
 
-  it("should pass when at least one contact method is provided", () => {
+  it("should pass when a valid gmail is provided", () => {
     const result = checkoutSchema.safeParse({
-      customerGmail: "",
-      customerInstagram: "pawfect_account",
+      customerGmail: "test@gmail.com",
+      customerInstagram: "",
       customerLine: "",
       note: "",
       termsAccepted: true,

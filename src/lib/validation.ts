@@ -44,28 +44,12 @@ export const cartItemSchema = z
 
 export const checkoutSchema = z
   .object({
-    customerGmail: z
-      .string()
-      .refine((value) => value === "" || /^[^@\s]+@gmail\.com$/i.test(value), "請填寫 Gmail")
-      .or(z.literal("")),
+    customerGmail: z.string().trim().min(1, "請填寫 Gmail").regex(/^[^@\s]+@gmail\.com$/i, "請填寫有效 Gmail"),
     customerInstagram: z.string().max(100, "Instagram 最多 100 字").or(z.literal("")),
     customerLine: z.string().max(100, "LINE 最多 100 字").or(z.literal("")),
     note: z.string().max(1000, "備註最多 1000 字").or(z.literal("")),
     termsAccepted: z.boolean().refine((value) => value, "請勾選同意注意事項"),
     materialAdjustment: z.enum(["accept", "confirm-first"]),
-  })
-  .superRefine((value, ctx) => {
-    const hasAnyContact =
-      value.customerGmail.trim().length > 0 ||
-      value.customerInstagram.trim().length > 0 ||
-      value.customerLine.trim().length > 0;
-
-    if (!hasAnyContact) {
-      const message = "請至少填寫 Gmail、Instagram 或 LINE 其中一項聯絡方式";
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message, path: ["customerGmail"] });
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message, path: ["customerInstagram"] });
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message, path: ["customerLine"] });
-    }
   });
 
 export const createOrderPayloadSchema = z.object({

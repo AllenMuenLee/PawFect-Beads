@@ -1,7 +1,7 @@
 ﻿import { NextResponse } from "next/server";
 
 import { ADD_ON_CHARM_PRICE, calculateOrderTotal } from "@/src/lib/cart";
-import { BRACELET_SIZES, NECKLACE_SIZES } from "@/src/lib/catalog";
+import { BRACELET_SIZES } from "@/src/lib/catalog";
 import { getCatalogProductMapByIds } from "@/src/lib/catalog-db";
 import { ORDER_STATUS } from "@/src/lib/order-status";
 import { ensureDatabaseInitialized } from "@/src/lib/db-init";
@@ -37,15 +37,13 @@ export async function POST(request: Request) {
         throw new Error("商品不存在或已下架，請重新加入購物車");
       }
 
-      if (product.categoryType === "bracelet" && !BRACELET_SIZES.includes(item.sizeValue as (typeof BRACELET_SIZES)[number])) {
+      const normalizedSizeValue = product.categoryType === "necklace" ? "固定尺寸" : item.sizeValue.trim();
+
+      if (product.categoryType === "bracelet" && !BRACELET_SIZES.includes(normalizedSizeValue as (typeof BRACELET_SIZES)[number])) {
         throw new Error("手鍊尺寸僅可選 13-17");
       }
 
-      if (product.categoryType === "necklace" && !NECKLACE_SIZES.includes(item.sizeValue as (typeof NECKLACE_SIZES)[number])) {
-        throw new Error("請選擇項鍊長度類型");
-      }
-
-      if (product.categoryType === "ring" && item.sizeValue.trim().length < 1) {
+      if (product.categoryType === "ring" && normalizedSizeValue.length < 1) {
         throw new Error("請填寫戒圍尺寸");
       }
 
@@ -53,7 +51,7 @@ export async function POST(request: Request) {
         throw new Error(`商品「${product.name}」不可加購小綴飾`);
       }
 
-      return { item, product };
+      return { item, product, normalizedSizeValue };
     });
 
     const orderNumber = generateOrderNumber();
@@ -70,19 +68,19 @@ export async function POST(request: Request) {
       data: {
         orderNumber,
         status: ORDER_STATUS.PROCESSING,
-        customerGmail: checkout.customerGmail || null,
+        customerGmail: checkout.customerGmail.trim(),
         customerInstagram: checkout.customerInstagram || null,
         customerLine: checkout.customerLine || null,
         note: checkout.note || null,
         totalAmount,
         items: {
-          create: itemsWithCatalog.map(({ item, product }) => ({
+          create: itemsWithCatalog.map(({ item, product, normalizedSizeValue }) => ({
             productId: product.id,
             productName: product.name,
             unitPrice: product.price,
             quantity: item.quantity,
             categoryType: product.categoryType,
-            sizeValue: item.sizeValue,
+            sizeValue: normalizedSizeValue,
             colorScheme: item.colorScheme,
             styleDescription: item.styleDescription,
             addOnCharm: product.allowCharm && item.addOnCharmQuantity > 0,
@@ -172,3 +170,4 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "建立訂單失敗" }, { status: 500 });
   }
 }
+
