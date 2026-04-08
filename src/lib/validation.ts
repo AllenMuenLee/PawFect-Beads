@@ -50,6 +50,28 @@ export const checkoutSchema = z
     note: z.string().max(1000, "備註最多 1000 字").or(z.literal("")),
     termsAccepted: z.boolean().refine((value) => value, "請勾選同意注意事項"),
     materialAdjustment: z.enum(["accept", "confirm-first"]),
+    orderIdentityType: z.enum(["school-member", "friend-family"], {
+      message: "請選擇訂購者身分",
+    }),
+    schoolClassSeat: z.string().max(100, "班級座號最多 100 字").or(z.literal("")),
+    friendFamilyName: z.string().max(100, "姓名最多 100 字").or(z.literal("")),
+  })
+  .superRefine((value, ctx) => {
+    if (value.orderIdentityType === "school-member" && value.schoolClassSeat.trim().length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["schoolClassSeat"],
+        message: "請填寫班級座號",
+      });
+    }
+
+    if (value.orderIdentityType === "friend-family" && value.friendFamilyName.trim().length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["friendFamilyName"],
+        message: "請填寫姓名",
+      });
+    }
   });
 
 export const createOrderPayloadSchema = z.object({

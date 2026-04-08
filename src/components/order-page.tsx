@@ -39,6 +39,9 @@ const defaultCheckoutValues: CheckoutInput = {
   note: "",
   termsAccepted: false,
   materialAdjustment: "accept",
+  orderIdentityType: "school-member",
+  schoolClassSeat: "",
+  friendFamilyName: "",
 };
 
 const NECKLACE_SIZE_VALUE = "固定尺寸";
@@ -225,8 +228,12 @@ export function OrderPage() {
         contactValues.materialAdjustment === "accept"
           ? "若材料不足：是，接受調整"
           : "若材料不足：否，希望先聯絡確認";
+      const identityText =
+        contactValues.orderIdentityType === "school-member"
+          ? `訂購者身分：竹女師生\n班級座號：${contactValues.schoolClassSeat.trim()}`
+          : `訂購者身分：本帳工作人員親友\n姓名：${contactValues.friendFamilyName.trim()}`;
 
-      const mergedNote = [contactValues.note, "營運須知：已同意", materialAdjustmentText]
+      const mergedNote = [contactValues.note, identityText, "營運須知：已同意", materialAdjustmentText]
         .filter(Boolean)
         .join("\n");
 
@@ -618,6 +625,55 @@ export function OrderPage() {
                   {...checkoutForm.register("note")}
                 />
                 <p className="text-xs text-rose-500">{checkoutForm.formState.errors.note?.message}</p>
+              </div>
+
+              <div className="space-y-2 rounded-2xl border border-red-200 bg-red-50/70 p-3">
+                <p className="text-sm font-semibold text-red-600">
+                  不接受除竹女師生及本帳工作人員親友外之陌生訂單
+                </p>
+              </div>
+
+              <div className="space-y-2 rounded-2xl border border-rose-100 bg-rose-50/40 p-3">
+                <p className="text-sm font-medium text-stone-800">您的身分（可代訂）</p>
+                <label className="flex items-center gap-2 text-sm text-stone-800">
+                  <input type="radio" value="school-member" {...checkoutForm.register("orderIdentityType")} />
+                  <span>竹女師生</span>
+                </label>
+                <label className="flex items-center gap-2 text-sm text-stone-800">
+                  <input type="radio" value="friend-family" {...checkoutForm.register("orderIdentityType")} />
+                  <span>本帳工作人員親友</span>
+                </label>
+                <p className="text-xs text-rose-500">
+                  {checkoutForm.formState.errors.orderIdentityType?.message}
+                </p>
+
+                {checkoutForm.watch("orderIdentityType") === "school-member" ? (
+                  <div className="space-y-1">
+                    <label className="text-sm font-medium text-stone-800">班級座號</label>
+                    <input
+                      type="text"
+                      placeholder="例如：312 班 18 號"
+                      className="w-full rounded-2xl border border-rose-200 bg-white px-4 py-3 text-sm"
+                      {...checkoutForm.register("schoolClassSeat")}
+                    />
+                    <p className="text-xs text-rose-500">
+                      {checkoutForm.formState.errors.schoolClassSeat?.message}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-1">
+                    <label className="text-sm font-medium text-stone-800">姓名</label>
+                    <input
+                      type="text"
+                      placeholder="請填寫親友姓名"
+                      className="w-full rounded-2xl border border-rose-200 bg-white px-4 py-3 text-sm"
+                      {...checkoutForm.register("friendFamilyName")}
+                    />
+                    <p className="text-xs text-rose-500">
+                      {checkoutForm.formState.errors.friendFamilyName?.message}
+                    </p>
+                  </div>
+                )}
               </div>
 
               <div className="space-y-2 rounded-2xl border border-rose-100 bg-rose-50/40 p-3">

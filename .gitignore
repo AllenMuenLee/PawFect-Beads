@@ -23,6 +23,7 @@
 # misc
 .DS_Store
 *.pem
+*.xapk
 
 # debug
 npm-debug.log*

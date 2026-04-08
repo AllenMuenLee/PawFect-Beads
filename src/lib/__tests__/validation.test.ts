@@ -58,6 +58,9 @@ describe("checkoutSchema", () => {
       note: "",
       termsAccepted: true,
       materialAdjustment: "accept",
+      orderIdentityType: "school-member",
+      schoolClassSeat: "312-18",
+      friendFamilyName: "",
     });
 
     expect(result.success).toBe(false);
@@ -71,8 +74,43 @@ describe("checkoutSchema", () => {
       note: "",
       termsAccepted: true,
       materialAdjustment: "confirm-first",
+      orderIdentityType: "school-member",
+      schoolClassSeat: "312-18",
+      friendFamilyName: "",
     });
 
     expect(result.success).toBe(true);
+  });
+
+  it("should fail when school member does not provide class and seat", () => {
+    const result = checkoutSchema.safeParse({
+      customerGmail: "test@gmail.com",
+      customerInstagram: "",
+      customerLine: "",
+      note: "",
+      termsAccepted: true,
+      materialAdjustment: "accept",
+      orderIdentityType: "school-member",
+      schoolClassSeat: "",
+      friendFamilyName: "",
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it("should fail when friend-family does not provide name", () => {
+    const result = checkoutSchema.safeParse({
+      customerGmail: "test@gmail.com",
+      customerInstagram: "",
+      customerLine: "",
+      note: "",
+      termsAccepted: true,
+      materialAdjustment: "accept",
+      orderIdentityType: "friend-family",
+      schoolClassSeat: "",
+      friendFamilyName: "",
+    });
+
+    expect(result.success).toBe(false);
   });
 });
