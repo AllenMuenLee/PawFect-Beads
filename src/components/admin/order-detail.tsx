@@ -1,9 +1,9 @@
-"use client";
+﻿"use client";
 
-import Link from "next/link";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 import { ORDER_STATUS, getOrderStatusLabel } from "@/src/lib/order-status";
 
@@ -25,6 +25,10 @@ type OrderDetail = {
   status: string;
   totalAmount: number;
   createdAt: string;
+  customerGmail: string;
+  customerInstagram: string | null;
+  customerLine: string | null;
+  note: string | null;
   items: OrderDetailItem[];
 };
 
@@ -33,6 +37,22 @@ const currencyFormatter = new Intl.NumberFormat("zh-TW", {
   currency: "TWD",
   maximumFractionDigits: 0,
 });
+
+function extractOrderOwner(note: string | null) {
+  if (!note) {
+    return { identity: null, owner: null };
+  }
+
+  const lines = note.split("\n").map((line) => line.trim());
+  const identityLine = lines.find((line) => line.startsWith("訂購者身分："));
+  const schoolSeatLine = lines.find((line) => line.startsWith("班級座號："));
+  const friendNameLine = lines.find((line) => line.startsWith("姓名："));
+
+  return {
+    identity: identityLine?.replace("訂購者身分：", "").trim() || null,
+    owner: schoolSeatLine?.replace("班級座號：", "").trim() || friendNameLine?.replace("姓名：", "").trim() || null,
+  };
+}
 
 export function AdminOrderDetail({ orderId }: { orderId: string }) {
   const router = useRouter();
@@ -51,6 +71,7 @@ export function AdminOrderDetail({ orderId }: { orderId: string }) {
           router.replace("/admin");
           return;
         }
+
         if (!response.ok) {
           setError("讀取訂單明細失敗");
           return;
@@ -84,6 +105,10 @@ export function AdminOrderDetail({ orderId }: { orderId: string }) {
   }
 
   const isShipped = order.status === ORDER_STATUS.COMPLETED;
+  const ownerInfo = extractOrderOwner(order.note);
+  const contactLabel = [order.customerGmail, order.customerInstagram, order.customerLine]
+    .filter(Boolean)
+    .join(" / ");
 
   return (
     <main className="mx-auto w-full max-w-5xl space-y-6 px-5 py-10">
@@ -103,6 +128,9 @@ export function AdminOrderDetail({ orderId }: { orderId: string }) {
           <p>是否已出貨：{isShipped ? "是" : "否"}</p>
           <p>建立時間：{new Date(order.createdAt).toLocaleString("zh-TW")}</p>
           <p>總金額：{currencyFormatter.format(order.totalAmount)}</p>
+          <p>聯絡方式：{contactLabel || "未提供"}</p>
+          <p>訂購者身分：{ownerInfo.identity || "未提供"}</p>
+          <p className="sm:col-span-2">訂購者資訊：{ownerInfo.owner || "未提供"}</p>
         </div>
       </section>
 
