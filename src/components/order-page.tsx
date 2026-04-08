@@ -566,9 +566,9 @@ export function OrderPage() {
       </div>
 
       {isContactOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/35 p-4">
-          <div className="w-full max-w-md rounded-3xl border border-rose-100 bg-white p-6 shadow-xl">
-            <div className="mb-4 flex items-center justify-between">
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-stone-900/35 px-4 py-6 sm:items-center">
+          <div className="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-3xl border border-rose-100 bg-white p-6 shadow-xl">
+            <div className="mb-4 flex items-center justify-between border-b border-rose-100 pb-3">
               <h3 className="text-lg font-semibold text-rose-950">填寫聯絡資訊</h3>
               <button
                 type="button"
@@ -579,135 +579,143 @@ export function OrderPage() {
               </button>
             </div>
 
-            <form onSubmit={checkoutForm.handleSubmit(onSubmitOrder)} className="space-y-3">
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-stone-800">Gmail（必填）</label>
-                <input
-                  type="email"
-                  placeholder="example@gmail.com"
-                  className="w-full rounded-2xl border border-rose-200 bg-rose-50/40 px-4 py-3 text-sm"
-                  required
-                  {...checkoutForm.register("customerGmail")}
-                />
-                <p className="text-xs text-rose-500">{checkoutForm.formState.errors.customerGmail?.message}</p>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-stone-800">Instagram</label>
-                <input
-                  type="text"
-                  placeholder="@帳號"
-                  className="w-full rounded-2xl border border-rose-200 bg-rose-50/40 px-4 py-3 text-sm"
-                  {...checkoutForm.register("customerInstagram")}
-                />
-                <p className="text-xs text-rose-500">
-                  {checkoutForm.formState.errors.customerInstagram?.message}
-                </p>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-stone-800">LINE</label>
-                <input
-                  type="text"
-                  placeholder="LINE ID"
-                  className="w-full rounded-2xl border border-rose-200 bg-rose-50/40 px-4 py-3 text-sm"
-                  {...checkoutForm.register("customerLine")}
-                />
-                <p className="text-xs text-rose-500">{checkoutForm.formState.errors.customerLine?.message}</p>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-stone-800">備註（選填）</label>
-                <textarea
-                  rows={3}
-                  placeholder="可補充希望聯絡時段..."
-                  className="w-full rounded-2xl border border-rose-200 bg-rose-50/40 px-4 py-3 text-sm"
-                  {...checkoutForm.register("note")}
-                />
-                <p className="text-xs text-rose-500">{checkoutForm.formState.errors.note?.message}</p>
-              </div>
-
-              <div className="space-y-2 rounded-2xl border border-red-200 bg-red-50/70 p-3">
-                <p className="text-sm font-semibold text-red-600">
-                  不接受除竹女師生及本帳工作人員親友外之陌生訂單
-                </p>
-              </div>
-
-              <div className="space-y-2 rounded-2xl border border-rose-100 bg-rose-50/40 p-3">
-                <p className="text-sm font-medium text-stone-800">您的身分（可代訂）</p>
-                <label className="flex items-center gap-2 text-sm text-stone-800">
-                  <input type="radio" value="school-member" {...checkoutForm.register("orderIdentityType")} />
-                  <span>竹女師生</span>
-                </label>
-                <label className="flex items-center gap-2 text-sm text-stone-800">
-                  <input type="radio" value="friend-family" {...checkoutForm.register("orderIdentityType")} />
-                  <span>本帳工作人員親友</span>
-                </label>
-                <p className="text-xs text-rose-500">
-                  {checkoutForm.formState.errors.orderIdentityType?.message}
-                </p>
-
-                {checkoutForm.watch("orderIdentityType") === "school-member" ? (
-                  <div className="space-y-1">
-                    <label className="text-sm font-medium text-stone-800">班級座號</label>
+            <form onSubmit={checkoutForm.handleSubmit(onSubmitOrder)} className="flex min-h-0 flex-1 flex-col">
+              <div className="space-y-3 overflow-y-auto pr-1">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="space-y-1 sm:col-span-2">
+                    <label className="text-sm font-medium text-stone-800">Gmail（必填）</label>
                     <input
-                      type="text"
-                      placeholder="例如：312 班 18 號"
-                      className="w-full rounded-2xl border border-rose-200 bg-white px-4 py-3 text-sm"
-                      {...checkoutForm.register("schoolClassSeat")}
+                      type="email"
+                      placeholder="example@gmail.com"
+                      className="w-full rounded-2xl border border-rose-200 bg-rose-50/40 px-4 py-3 text-sm"
+                      required
+                      {...checkoutForm.register("customerGmail")}
                     />
                     <p className="text-xs text-rose-500">
-                      {checkoutForm.formState.errors.schoolClassSeat?.message}
+                      {checkoutForm.formState.errors.customerGmail?.message}
                     </p>
                   </div>
-                ) : (
+
                   <div className="space-y-1">
-                    <label className="text-sm font-medium text-stone-800">姓名</label>
+                    <label className="text-sm font-medium text-stone-800">Instagram</label>
                     <input
                       type="text"
-                      placeholder="請填寫親友姓名"
-                      className="w-full rounded-2xl border border-rose-200 bg-white px-4 py-3 text-sm"
-                      {...checkoutForm.register("friendFamilyName")}
+                      placeholder="@帳號"
+                      className="w-full rounded-2xl border border-rose-200 bg-rose-50/40 px-4 py-3 text-sm"
+                      {...checkoutForm.register("customerInstagram")}
                     />
                     <p className="text-xs text-rose-500">
-                      {checkoutForm.formState.errors.friendFamilyName?.message}
+                      {checkoutForm.formState.errors.customerInstagram?.message}
                     </p>
                   </div>
-                )}
+
+                  <div className="space-y-1">
+                    <label className="text-sm font-medium text-stone-800">LINE</label>
+                    <input
+                      type="text"
+                      placeholder="LINE ID"
+                      className="w-full rounded-2xl border border-rose-200 bg-rose-50/40 px-4 py-3 text-sm"
+                      {...checkoutForm.register("customerLine")}
+                    />
+                    <p className="text-xs text-rose-500">{checkoutForm.formState.errors.customerLine?.message}</p>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-stone-800">備註（選填）</label>
+                  <textarea
+                    rows={3}
+                    placeholder="可補充希望聯絡時段..."
+                    className="w-full rounded-2xl border border-rose-200 bg-rose-50/40 px-4 py-3 text-sm"
+                    {...checkoutForm.register("note")}
+                  />
+                  <p className="text-xs text-rose-500">{checkoutForm.formState.errors.note?.message}</p>
+                </div>
+
+                <div className="space-y-2 rounded-2xl border border-red-200 bg-red-50/70 p-3">
+                  <p className="text-sm font-semibold text-red-600">
+                    不接受除竹女師生及本帳工作人員親友外之陌生訂單
+                  </p>
+                </div>
+
+                <div className="space-y-2 rounded-2xl border border-rose-100 bg-rose-50/40 p-3">
+                  <p className="text-sm font-medium text-stone-800">您的身分（可代訂）</p>
+                  <label className="flex items-center gap-2 text-sm text-stone-800">
+                    <input type="radio" value="school-member" {...checkoutForm.register("orderIdentityType")} />
+                    <span>竹女師生</span>
+                  </label>
+                  <label className="flex items-center gap-2 text-sm text-stone-800">
+                    <input type="radio" value="friend-family" {...checkoutForm.register("orderIdentityType")} />
+                    <span>本帳工作人員親友</span>
+                  </label>
+                  <p className="text-xs text-rose-500">
+                    {checkoutForm.formState.errors.orderIdentityType?.message}
+                  </p>
+
+                  {checkoutForm.watch("orderIdentityType") === "school-member" ? (
+                    <div className="space-y-1">
+                      <label className="text-sm font-medium text-stone-800">班級座號</label>
+                      <input
+                        type="text"
+                        placeholder="例如：312 班 18 號"
+                        className="w-full rounded-2xl border border-rose-200 bg-white px-4 py-3 text-sm"
+                        {...checkoutForm.register("schoolClassSeat")}
+                      />
+                      <p className="text-xs text-rose-500">
+                        {checkoutForm.formState.errors.schoolClassSeat?.message}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-1">
+                      <label className="text-sm font-medium text-stone-800">姓名</label>
+                      <input
+                        type="text"
+                        placeholder="請填寫親友姓名"
+                        className="w-full rounded-2xl border border-rose-200 bg-white px-4 py-3 text-sm"
+                        {...checkoutForm.register("friendFamilyName")}
+                      />
+                      <p className="text-xs text-rose-500">
+                        {checkoutForm.formState.errors.friendFamilyName?.message}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-2 rounded-2xl border border-rose-100 bg-rose-50/40 p-3">
+                  <label className="flex items-start gap-2 text-sm text-stone-800">
+                    <input type="checkbox" className="mt-0.5" {...checkoutForm.register("termsAccepted")} />
+                    <span>我已詳閱官帳發佈之「營運須知」並願意遵守</span>
+                  </label>
+                  <p className="text-xs text-rose-500">{checkoutForm.formState.errors.termsAccepted?.message}</p>
+                </div>
+
+                <div className="space-y-2 rounded-2xl border border-rose-100 bg-rose-50/40 p-3">
+                  <p className="text-sm font-medium text-stone-800">若材料不足，是否接受調整？</p>
+                  <label className="flex items-center gap-2 text-sm text-stone-800">
+                    <input type="radio" value="accept" {...checkoutForm.register("materialAdjustment")} />
+                    <span>1. 是</span>
+                  </label>
+                  <label className="flex items-center gap-2 text-sm text-stone-800">
+                    <input type="radio" value="confirm-first" {...checkoutForm.register("materialAdjustment")} />
+                    <span>2. 否，希望先聯絡確認</span>
+                  </label>
+                  <p className="text-xs text-rose-500">
+                    {checkoutForm.formState.errors.materialAdjustment?.message}
+                  </p>
+                </div>
+
+                {submitError && <p className="text-sm text-red-600">{submitError}</p>}
               </div>
 
-              <div className="space-y-2 rounded-2xl border border-rose-100 bg-rose-50/40 p-3">
-                <label className="flex items-start gap-2 text-sm text-stone-800">
-                  <input type="checkbox" className="mt-0.5" {...checkoutForm.register("termsAccepted")} />
-                  <span>我已詳閱官帳發佈之「營運須知」並願意遵守</span>
-                </label>
-                <p className="text-xs text-rose-500">{checkoutForm.formState.errors.termsAccepted?.message}</p>
+              <div className="mt-4 border-t border-rose-100 pt-3">
+                <button
+                  type="submit"
+                  disabled={checkoutForm.formState.isSubmitting}
+                  className="w-full rounded-2xl bg-rose-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:bg-rose-300"
+                >
+                  {checkoutForm.formState.isSubmitting ? "送出中..." : "送出訂單"}
+                </button>
               </div>
-
-              <div className="space-y-2 rounded-2xl border border-rose-100 bg-rose-50/40 p-3">
-                <p className="text-sm font-medium text-stone-800">若材料不足，是否接受調整？</p>
-                <label className="flex items-center gap-2 text-sm text-stone-800">
-                  <input type="radio" value="accept" {...checkoutForm.register("materialAdjustment")} />
-                  <span>1. 是</span>
-                </label>
-                <label className="flex items-center gap-2 text-sm text-stone-800">
-                  <input type="radio" value="confirm-first" {...checkoutForm.register("materialAdjustment")} />
-                  <span>2. 否，希望先聯絡確認</span>
-                </label>
-                <p className="text-xs text-rose-500">
-                  {checkoutForm.formState.errors.materialAdjustment?.message}
-                </p>
-              </div>
-
-              {submitError && <p className="text-sm text-red-600">{submitError}</p>}
-
-              <button
-                type="submit"
-                disabled={checkoutForm.formState.isSubmitting}
-                className="mt-2 w-full rounded-2xl bg-rose-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:bg-rose-300"
-              >
-                {checkoutForm.formState.isSubmitting ? "送出中..." : "送出訂單"}
-              </button>
             </form>
           </div>
         </div>
