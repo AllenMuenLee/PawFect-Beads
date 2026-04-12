@@ -205,7 +205,6 @@ export function AdminProductsManager() {
                 setForm((prev) => ({
                   ...prev,
                   categoryType: nextCategory,
-                  allowCharm: nextCategory === "ring" ? false : prev.allowCharm,
                 }));
               }}
               className="w-full rounded-xl border border-stone-300/90 px-4 py-3 text-[15px] outline-none transition focus:border-rose-300 focus:ring-2 focus:ring-rose-100"
@@ -222,7 +221,6 @@ export function AdminProductsManager() {
               <input
                 type="checkbox"
                 checked={form.allowCharm}
-                disabled={form.categoryType === "ring"}
                 onChange={(event) => setForm((prev) => ({ ...prev, allowCharm: event.target.checked }))}
               />
               可加購小綴飾（每個 $15）
