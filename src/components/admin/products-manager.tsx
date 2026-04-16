@@ -161,18 +161,20 @@ export function AdminProductsManager() {
             <h1 className="text-3xl font-semibold tracking-tight text-[#3f2e34] sm:text-4xl">商品類型管理</h1>
             <p className="text-sm leading-[1.7] text-stone-600 sm:text-base">控制客製區顯示項目、價格與小綴飾加購設定。</p>
           </div>
-          <Link
-            href="/admin/dashboard"
-            className="rounded-xl border border-rose-200 bg-white px-4 py-2.5 text-sm font-medium text-stone-700 transition hover:bg-rose-50"
-          >
-            返回儀表板
-          </Link>
-          <Link
-            href="/admin/ready-made"
-            className="rounded-xl border border-rose-200 bg-white px-4 py-2.5 text-sm font-medium text-stone-700 transition hover:bg-rose-50"
-          >
-            預製作品管理
-          </Link>
+          <div className="ml-auto flex flex-wrap justify-end gap-3">
+            <Link
+              href="/admin/ready-made"
+              className="rounded-xl border border-rose-200 bg-white px-4 py-2.5 text-sm font-medium text-stone-700 transition hover:bg-rose-50"
+            >
+              預製作品管理
+            </Link>
+            <Link
+              href="/admin/dashboard"
+              className="rounded-xl border border-rose-200 bg-white px-4 py-2.5 text-sm font-medium text-stone-700 transition hover:bg-rose-50"
+            >
+              返回儀表板
+            </Link>
+          </div>
         </div>
       </header>
 
