@@ -167,6 +167,12 @@ export function AdminProductsManager() {
           >
             返回儀表板
           </Link>
+          <Link
+            href="/admin/ready-made"
+            className="rounded-xl border border-rose-200 bg-white px-4 py-2.5 text-sm font-medium text-stone-700 transition hover:bg-rose-50"
+          >
+            預製作品管理
+          </Link>
         </div>
       </header>
 

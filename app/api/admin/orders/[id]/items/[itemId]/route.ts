@@ -26,7 +26,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
 
   try {
     const existing = await prisma.orderItem.findFirst({
-      where: { id: itemId, orderId: id },
+      where: { id: itemId, orderId: id, order: { deletedAt: null } },
       select: { id: true, orderId: true },
     });
 

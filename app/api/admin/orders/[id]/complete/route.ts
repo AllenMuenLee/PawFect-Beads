@@ -29,6 +29,15 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
   const { id } = await context.params;
 
   try {
+    const existingOrder = await prisma.order.findFirst({
+      where: { id, deletedAt: null },
+      select: { id: true },
+    });
+
+    if (!existingOrder) {
+      return NextResponse.json({ error: "找不到訂單" }, { status: 404 });
+    }
+
     const order = await prisma.order.update({
       where: { id },
       data: {

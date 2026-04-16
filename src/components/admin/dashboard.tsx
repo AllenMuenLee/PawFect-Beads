@@ -127,7 +127,7 @@ export function AdminDashboard() {
 
   const handleDeleteOrder = useCallback(
     async (orderId: string) => {
-      const confirmed = window.confirm("確定要刪除此訂單嗎？");
+      const confirmed = window.confirm("確定要將此訂單移到回收區嗎？");
       if (!confirmed) {
         return;
       }
@@ -146,13 +146,14 @@ export function AdminDashboard() {
         }
 
         if (!response.ok) {
-          setError("刪除訂單失敗");
+          const payload = (await response.json().catch(() => null)) as { error?: string } | null;
+          setError(payload?.error ?? "移到回收區失敗");
           return;
         }
 
         await loadData();
       } catch {
-        setError("刪除訂單失敗");
+        setError("移到回收區失敗");
       } finally {
         setPendingKey(null);
       }
@@ -221,6 +222,12 @@ export function AdminDashboard() {
               商品管理
             </Link>
             <Link
+              href="/admin/ready-made"
+              className="rounded-xl border border-rose-200 bg-white px-4 py-2.5 text-sm font-medium text-stone-700 transition hover:bg-rose-50"
+            >
+              預製作品管理
+            </Link>
+            <Link
               href="/admin/instagram"
               className="rounded-xl border border-rose-200 bg-white px-4 py-2.5 text-sm font-medium text-stone-700 transition hover:bg-rose-50"
             >
@@ -256,12 +263,22 @@ export function AdminDashboard() {
       <section className="rounded-[1.75rem] border border-rose-100/80 bg-white p-6 shadow-[0_18px_40px_-32px_rgba(99,63,77,0.48)] sm:p-8">
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3 sm:mb-7">
           <h2 className="text-2xl font-semibold tracking-tight text-[#3f2e34]">所有訂單</h2>
-          <button
-            onClick={loadData}
-            className="rounded-xl border border-rose-200 bg-white px-4 py-2 text-sm font-medium text-stone-700 transition hover:bg-rose-50"
-          >
-            重新整理
-          </button>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/admin/orders/trash"
+              className="rounded-xl border border-rose-200 bg-white px-3 py-2 text-sm font-medium text-stone-700 transition hover:bg-rose-50"
+              aria-label="前往回收區"
+              title="回收區"
+            >
+              垃圾桶
+            </Link>
+            <button
+              onClick={loadData}
+              className="rounded-xl border border-rose-200 bg-white px-4 py-2 text-sm font-medium text-stone-700 transition hover:bg-rose-50"
+            >
+              重新整理
+            </button>
+          </div>
         </div>
 
         <div className="overflow-x-auto">
@@ -328,7 +345,7 @@ export function AdminDashboard() {
                           disabled={pendingKey === `delete-${order.id}`}
                           className="rounded-lg border border-rose-300 px-3 py-1.5 text-rose-600 transition hover:bg-rose-50 disabled:opacity-50"
                         >
-                          刪除
+                          移到回收區
                         </button>
                         <Link
                           href={`/admin/orders/${order.id}`}
@@ -354,6 +371,7 @@ export function AdminDashboard() {
           </table>
         </div>
       </section>
+
     </main>
   );
 }

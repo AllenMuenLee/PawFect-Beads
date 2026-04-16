@@ -20,6 +20,7 @@ import {
   type CartItemInput,
   type CheckoutInput,
 } from "@/src/lib/validation";
+import type { ReadyMadeProduct } from "@/src/lib/ready-made";
 
 const defaultItemValues: CartItemInput = {
   id: "",
@@ -45,12 +46,16 @@ const defaultCheckoutValues: CheckoutInput = {
 };
 
 const NECKLACE_SIZE_VALUE = "固定尺寸";
+const READY_MADE_COLOR_FALLBACK = COLOR_SCHEMES[COLOR_SCHEMES.length - 1];
 
 export function OrderPage() {
   const { items, totalAmount, addItem, updateItem, removeItem, updateQuantity, clearCart, isReady } =
     useCart();
   const [catalogProducts, setCatalogProducts] = useState<ProductCatalogItem[]>(PRODUCT_CATALOG);
   const [isCatalogLoading, setIsCatalogLoading] = useState(true);
+  const [readyMadeProducts, setReadyMadeProducts] = useState<ReadyMadeProduct[]>([]);
+  const [isReadyMadeLoading, setIsReadyMadeLoading] = useState(true);
+  const [readyMadeQuantities, setReadyMadeQuantities] = useState<Record<string, number>>({});
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -74,6 +79,10 @@ export function OrderPage() {
   const selectedProduct = useMemo(
     () => catalogProducts.find((product) => product.id === selectedProductId),
     [catalogProducts, selectedProductId],
+  );
+  const readyMadeStockMap = useMemo(
+    () => new Map(readyMadeProducts.map((product) => [product.id, product.stock])),
+    [readyMadeProducts],
   );
 
   useEffect(() => {
@@ -104,6 +113,45 @@ export function OrderPage() {
     void fetchCatalog();
   }, [itemForm]);
 
+  useEffect(() => {
+    let active = true;
+
+    const fetchReadyMadeProducts = async (isInitial: boolean) => {
+      if (isInitial) {
+        setIsReadyMadeLoading(true);
+      }
+
+      try {
+        const response = await fetch("/api/ready-made-products");
+        if (!response.ok) {
+          return;
+        }
+
+        const data = (await response.json()) as { products: ReadyMadeProduct[] };
+        if (!active) {
+          return;
+        }
+
+        setReadyMadeProducts(data.products);
+      } finally {
+        if (isInitial && active) {
+          setIsReadyMadeLoading(false);
+        }
+      }
+    };
+
+    void fetchReadyMadeProducts(true);
+
+    const timer = window.setInterval(() => {
+      void fetchReadyMadeProducts(false);
+    }, 15000);
+
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+    };
+  }, []);
+
   const resetItemFormForProduct = (productId: string) => {
     const product = catalogProducts.find((entry) => entry.id === productId);
     if (!product) {
@@ -129,6 +177,15 @@ export function OrderPage() {
   const onProductChange = (productId: string) => {
     itemForm.setValue("productId", productId);
     resetItemFormForProduct(productId);
+  };
+
+  const setCustomItemQuantity = (nextQuantity: number) => {
+    const safeQuantity = Math.min(99, Math.max(1, nextQuantity));
+    itemForm.setValue("quantity", safeQuantity, { shouldValidate: true });
+    const charmQty = itemForm.getValues("addOnCharmQuantity");
+    if (charmQty > safeQuantity) {
+      itemForm.setValue("addOnCharmQuantity", safeQuantity, { shouldValidate: true });
+    }
   };
 
   const onUploadFile = async (file?: File) => {
@@ -214,6 +271,57 @@ export function OrderPage() {
     });
   };
 
+  const getReadyMadeInCartQuantity = (productId: string, excludeItemId?: string) =>
+    items.reduce((acc, item) => {
+      if (item.categoryType !== "ready-made" || item.productId !== productId || item.id === excludeItemId) {
+        return acc;
+      }
+
+      return acc + item.quantity;
+    }, 0);
+
+  const getReadyMadeMaxQuantity = (productId: string, excludeItemId?: string) => {
+    const stock = readyMadeStockMap.get(productId) ?? 0;
+    const inCart = getReadyMadeInCartQuantity(productId, excludeItemId);
+    return Math.max(0, stock - inCart);
+  };
+
+  const onAddReadyMadeProduct = (product: ReadyMadeProduct) => {
+    const desiredQuantity = readyMadeQuantities[product.id] ?? 1;
+    const maxQuantity = getReadyMadeMaxQuantity(product.id);
+
+    if (maxQuantity <= 0) {
+      setFormMessage(`預製作品「${product.name}」目前庫存不足`);
+      return;
+    }
+
+    const quantity = Math.min(maxQuantity, Math.max(1, desiredQuantity));
+
+    const payload: CartItemInput = {
+      id: crypto.randomUUID(),
+      productId: product.id,
+      quantity,
+      sizeValue: "現貨",
+      colorScheme: READY_MADE_COLOR_FALLBACK,
+      styleDescription: product.description,
+      addOnCharmQuantity: 0,
+      referenceImageUrl: "",
+    };
+
+    addItem(payload, {
+      name: product.name,
+      price: product.price,
+      categoryType: "ready-made",
+      allowCharm: false,
+    });
+
+    setReadyMadeQuantities((prev) => ({
+      ...prev,
+      [product.id]: 1,
+    }));
+    setFormMessage(`已加入預製作品：${product.name}`);
+  };
+
   const onSubmitOrder = async (contactValues: CheckoutInput) => {
     if (items.length === 0) {
       setSubmitError("購物車為空，請先新增商品");
@@ -224,6 +332,33 @@ export function OrderPage() {
     setSubmitWarning(null);
 
     try {
+      const sanitizedItems = items.map((item) => {
+        const fallbackSizeValue =
+          item.categoryType === "necklace"
+            ? NECKLACE_SIZE_VALUE
+            : item.categoryType === "bracelet"
+              ? BRACELET_SIZES[0]
+              : "現貨";
+
+        const normalizedSizeValue = item.sizeValue.trim() || fallbackSizeValue;
+        const normalizedColorScheme = COLOR_SCHEMES.includes(
+          item.colorScheme as (typeof COLOR_SCHEMES)[number],
+        )
+          ? item.colorScheme
+          : READY_MADE_COLOR_FALLBACK;
+        const normalizedStyleDescription =
+          item.styleDescription.trim() || (item.categoryType === "ready-made" ? "預製作品" : "款式由店家確認");
+
+        return {
+          ...item,
+          sizeValue: normalizedSizeValue,
+          colorScheme: normalizedColorScheme,
+          styleDescription: normalizedStyleDescription,
+          addOnCharmQuantity: item.allowCharm ? item.addOnCharmQuantity : 0,
+          referenceImageUrl: item.referenceImageUrl || "",
+        };
+      });
+
       const materialAdjustmentText =
         contactValues.materialAdjustment === "accept"
           ? "若材料不足：是，接受調整"
@@ -243,7 +378,7 @@ export function OrderPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          items,
+          items: sanitizedItems,
           checkout: {
             ...contactValues,
             note: mergedNote,
@@ -271,6 +406,11 @@ export function OrderPage() {
       setIsContactOpen(false);
       checkoutForm.reset(defaultCheckoutValues);
       clearCart();
+      const readyMadeResponse = await fetch("/api/ready-made-products");
+      if (readyMadeResponse.ok) {
+        const data = (await readyMadeResponse.json()) as { products: ReadyMadeProduct[] };
+        setReadyMadeProducts(data.products);
+      }
       setEditingId(null);
       itemForm.reset(defaultItemValues);
     } catch (error) {
@@ -302,8 +442,9 @@ export function OrderPage() {
       )}
 
       <div className="mt-8 grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-        <div className="space-y-4 rounded-3xl border border-rose-100 bg-white p-6 shadow-[0_12px_35px_-18px_rgba(173,95,121,0.4)]">
-          <h2 className="text-lg font-semibold text-rose-950">商品客製區</h2>
+        <div className="space-y-4">
+          <div className="space-y-4 rounded-3xl border border-rose-100 bg-white p-6 shadow-[0_12px_35px_-18px_rgba(173,95,121,0.4)]">
+            <h2 className="text-lg font-semibold text-rose-950">商品客製區</h2>
 
           <form onSubmit={itemForm.handleSubmit(onAddOrUpdateItem)} className="space-y-4">
             <div className="space-y-2">
@@ -326,21 +467,25 @@ export function OrderPage() {
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <label className="text-sm font-medium text-stone-800">數量</label>
-                <input
-                  type="number"
-                  min={1}
-                  max={99}
-                  className="w-full rounded-2xl border border-rose-200 bg-rose-50/40 px-4 py-3 text-sm"
-                  value={itemForm.watch("quantity")}
-                  onChange={(event) => {
-                    const nextQuantity = Math.min(99, Math.max(1, Number(event.target.value) || 1));
-                    itemForm.setValue("quantity", nextQuantity, { shouldValidate: true });
-                    const charmQty = itemForm.getValues("addOnCharmQuantity");
-                    if (charmQty > nextQuantity) {
-                      itemForm.setValue("addOnCharmQuantity", nextQuantity, { shouldValidate: true });
-                    }
-                  }}
-                />
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setCustomItemQuantity(itemForm.watch("quantity") - 1)}
+                    className="h-10 w-10 rounded-xl border border-rose-200 bg-white text-base"
+                  >
+                    -
+                  </button>
+                  <span className="min-w-12 text-center text-sm font-medium text-stone-800">
+                    {itemForm.watch("quantity")}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setCustomItemQuantity(itemForm.watch("quantity") + 1)}
+                    className="h-10 w-10 rounded-xl border border-rose-200 bg-white text-base"
+                  >
+                    +
+                  </button>
+                </div>
                 <p className="text-xs text-rose-500">{itemForm.formState.errors.quantity?.message}</p>
               </div>
 
@@ -487,6 +632,94 @@ export function OrderPage() {
 
             {formMessage && <p className="text-sm text-emerald-700">{formMessage}</p>}
           </form>
+          </div>
+
+          <div className="rounded-3xl border border-rose-100 bg-white p-6 shadow-[0_12px_35px_-18px_rgba(173,95,121,0.4)]">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-semibold text-rose-950">預製作品區</h2>
+                <p className="mt-1 text-xs text-stone-500">此區會自動依庫存更新，售完即不顯示。</p>
+              </div>
+              {isReadyMadeLoading ? <span className="text-xs text-stone-500">載入中...</span> : null}
+            </div>
+
+            {readyMadeProducts.length === 0 && !isReadyMadeLoading ? (
+              <p className="mt-4 rounded-2xl border border-rose-100 bg-rose-50/40 px-4 py-3 text-sm text-stone-600">
+                目前沒有可購買的預製作品
+              </p>
+            ) : (
+              <div className="mt-4 grid gap-3 md:grid-cols-2">
+                {readyMadeProducts.map((product) => {
+                  const maxQuantity = getReadyMadeMaxQuantity(product.id);
+                  const currentInCart = getReadyMadeInCartQuantity(product.id);
+
+                  return (
+                    <article key={product.id} className="rounded-2xl border border-rose-100 bg-rose-50/30 p-4">
+                      {product.imageUrl ? (
+                        <div className="mb-3 overflow-hidden rounded-xl border border-rose-100">
+                          <Image
+                            src={product.imageUrl}
+                            alt={`${product.name} 預製作品照片`}
+                            width={800}
+                            height={500}
+                            className="h-auto max-h-72 w-full object-contain bg-stone-50"
+                          />
+                        </div>
+                      ) : null}
+                      <div className="flex items-start justify-between gap-2">
+                        <h3 className="text-sm font-semibold text-stone-800">{product.name}</h3>
+                        <p className="text-sm font-semibold text-rose-900">{formatCurrency(product.price)}</p>
+                      </div>
+                      <p className="mt-2 line-clamp-3 text-xs leading-5 text-stone-600">{product.description}</p>
+                      <p className="mt-2 text-xs text-stone-600">
+                        庫存：{product.stock}，已放入購物車：{currentInCart}
+                      </p>
+
+                      <div className="mt-3 flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setReadyMadeQuantities((prev) => ({
+                              ...prev,
+                              [product.id]: Math.max(1, (prev[product.id] ?? 1) - 1),
+                            }))
+                          }
+                          disabled={maxQuantity <= 0}
+                          className="h-8 w-8 rounded-lg border border-rose-200 bg-white text-sm disabled:opacity-50"
+                        >
+                          -
+                        </button>
+                        <span className="min-w-10 text-center text-sm font-medium text-stone-800">
+                          {Math.max(1, Math.min(maxQuantity || 1, readyMadeQuantities[product.id] ?? 1))}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setReadyMadeQuantities((prev) => ({
+                              ...prev,
+                              [product.id]: Math.min(Math.max(1, maxQuantity), (prev[product.id] ?? 1) + 1),
+                            }))
+                          }
+                          disabled={maxQuantity <= 0}
+                          className="h-8 w-8 rounded-lg border border-rose-200 bg-white text-sm disabled:opacity-50"
+                        >
+                          +
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => onAddReadyMadeProduct(product)}
+                          disabled={maxQuantity <= 0}
+                          className="rounded-xl border border-rose-300 bg-white px-3 py-1.5 text-xs font-medium text-stone-700 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {maxQuantity > 0 ? "加入購物車" : "庫存不足"}
+                        </button>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
 
         <aside className="h-fit space-y-4 rounded-3xl border border-rose-100 bg-white p-6 shadow-[0_12px_35px_-18px_rgba(173,95,121,0.4)] lg:sticky lg:top-24">
@@ -501,10 +734,14 @@ export function OrderPage() {
               {items.map((item) => (
                 <div key={item.id} className="rounded-2xl border border-rose-100 bg-rose-50/40 p-3">
                   <p className="text-sm font-medium text-stone-800">{item.productName}</p>
-                  {item.categoryType !== "necklace" ? (
+                  {item.categoryType !== "necklace" && item.categoryType !== "ready-made" ? (
                     <p className="mt-1 text-xs text-stone-600">尺寸：{item.sizeValue}</p>
                   ) : null}
-                  <p className="text-xs text-stone-600">配色：{item.colorScheme}</p>
+                  {item.categoryType !== "ready-made" ? (
+                    <p className="text-xs text-stone-600">配色：{item.colorScheme}</p>
+                  ) : (
+                    <p className="text-xs text-stone-600">現貨作品</p>
+                  )}
                   {item.addOnCharmQuantity > 0 && (
                     <p className="text-xs text-stone-600">
                       加購：小綴飾 x {item.addOnCharmQuantity}（
@@ -515,28 +752,45 @@ export function OrderPage() {
                     <p className="text-xs text-stone-600">描述：{item.styleDescription}</p>
                   )}
                   <div className="mt-2 flex items-center justify-between">
-                    <input
-                      type="number"
-                      min={1}
-                      max={99}
-                      value={item.quantity}
-                      onChange={(event) =>
-                        updateQuantity(item.id, Math.min(99, Math.max(1, Number(event.target.value) || 1)))
-                      }
-                      className="w-18 rounded-xl border border-rose-200 bg-white px-2 py-1 text-sm"
-                    />
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => updateQuantity(item.id, Math.max(1, item.quantity - 1))}
+                        className="h-8 w-8 rounded-lg border border-rose-200 bg-white text-sm"
+                      >
+                        -
+                      </button>
+                      <span className="min-w-8 text-center text-sm font-medium text-stone-800">
+                        {item.quantity}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const maxQuantity =
+                            item.categoryType === "ready-made"
+                              ? getReadyMadeMaxQuantity(item.productId, item.id) + item.quantity
+                              : 99;
+                          updateQuantity(item.id, Math.min(maxQuantity, item.quantity + 1));
+                        }}
+                        className="h-8 w-8 rounded-lg border border-rose-200 bg-white text-sm"
+                      >
+                        +
+                      </button>
+                    </div>
                     <p className="text-sm font-medium text-rose-900">
                       {formatCurrency(calculateCartItemSubtotal(item))}
                     </p>
                   </div>
                   <div className="mt-2 flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => onEditItem(item.id)}
-                      className="rounded-xl border border-rose-200 px-2 py-1 text-xs text-stone-700 hover:bg-white"
-                    >
-                      編輯
-                    </button>
+                    {item.categoryType !== "ready-made" ? (
+                      <button
+                        type="button"
+                        onClick={() => onEditItem(item.id)}
+                        className="rounded-xl border border-rose-200 px-2 py-1 text-xs text-stone-700 hover:bg-white"
+                      >
+                        編輯
+                      </button>
+                    ) : null}
                     <button
                       type="button"
                       onClick={() => removeItem(item.id)}

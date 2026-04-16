@@ -12,6 +12,7 @@ model Order {
   orderNumber       String      @unique
   status            String
   createdAt         DateTime    @default(now())
+  deletedAt         DateTime?
   customerGmail     String?
   customerInstagram String?
   customerLine      String?
@@ -73,6 +74,7 @@ model AdminProduct {
   price       Int
   stock       Int
   description String
+  imageUrl    String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }

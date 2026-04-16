@@ -6,14 +6,18 @@ import { prisma } from "@/src/lib/prisma";
 
 export const runtime = "nodejs";
 
-export async function GET() {
+export async function GET(request: Request) {
   const guardResponse = await guardAdminApi();
   if (guardResponse) {
     return guardResponse;
   }
 
   try {
+    const { searchParams } = new URL(request.url);
+    const includeDeleted = searchParams.get("includeDeleted") === "1";
+
     const orders = await prisma.order.findMany({
+      where: includeDeleted ? undefined : { deletedAt: null },
       include: {
         items: {
           select: {

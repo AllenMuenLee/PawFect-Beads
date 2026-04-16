@@ -14,6 +14,7 @@ async function createPostgresTables() {
       "orderNumber" TEXT NOT NULL UNIQUE,
       "status" TEXT NOT NULL,
       "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "deletedAt" TIMESTAMP(3),
       "customerGmail" TEXT,
       "customerInstagram" TEXT,
       "customerLine" TEXT,
@@ -49,6 +50,7 @@ async function createPostgresTables() {
   `);
 
   await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "OrderItem_orderId_idx" ON "OrderItem"("orderId");`);
+  await prisma.$executeRawUnsafe(`ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "deletedAt" TIMESTAMP(3);`);
 
   await prisma.$executeRawUnsafe(`
     CREATE TABLE IF NOT EXISTS "EmailLog" (
@@ -89,9 +91,15 @@ async function createPostgresTables() {
       "price" INTEGER NOT NULL,
       "stock" INTEGER NOT NULL,
       "description" TEXT NOT NULL,
+      "imageUrl" TEXT,
       "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
       "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
     );
+  `);
+
+  await prisma.$executeRawUnsafe(`
+    ALTER TABLE "AdminProduct"
+    ADD COLUMN IF NOT EXISTS "imageUrl" TEXT;
   `);
 
   await prisma.$executeRawUnsafe(`

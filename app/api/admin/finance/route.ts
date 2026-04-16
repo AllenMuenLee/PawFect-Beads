@@ -17,6 +17,7 @@ export async function GET() {
     const result = await prisma.order.aggregate({
       where: {
         status: ORDER_STATUS.COMPLETED,
+        deletedAt: null,
       },
       _sum: {
         totalAmount: true,

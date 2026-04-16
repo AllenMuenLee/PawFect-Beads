@@ -1,0 +1,3 @@
+ALTER TABLE "AdminProduct"
+ADD COLUMN IF NOT EXISTS "imageUrl" TEXT;
+

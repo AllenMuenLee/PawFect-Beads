@@ -1,4 +1,4 @@
-export type CategoryType = "bracelet" | "ring" | "necklace";
+export type CategoryType = "bracelet" | "ring" | "necklace" | "ready-made";
 
 export type ProductCatalogItem = {
   id: string;
